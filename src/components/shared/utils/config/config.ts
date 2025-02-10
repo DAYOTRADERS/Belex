@@ -2,7 +2,7 @@ import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/u
 import { isStaging } from '../url/helpers';
 
 export const APP_IDS = {
-    LOCALHOST: 67066,  // Set to 67066 for localhost
+    LOCALHOST: 36300,  
     TMP_STAGING: 64584,
     STAGING: 29934,
     STAGING_BE: 29934,
@@ -143,16 +143,33 @@ export const getDebugServiceWorker = () => {
     return false;
 };
 
+// Generate OAuth URL with app_id set to 67066
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
+
+    // Force the app_id to be 67066 after login
+    const configured_app_id = '67066';  // Always use app_id 67066 for OAuth
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
         original_url.hostname) as string;
 
     const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-    if (!valid_server_urls.includes(JSON.stringify(configured_server_url))) {
+    if (!valid_server_urls.includes(configured_server_url)) {
         original_url.hostname = configured_server_url;
     }
+
+    // Add the app_id as a query parameter
+    original_url.searchParams.set('app_id', configured_app_id);
+
     return original_url.toString() || oauth_url;
+};
+
+// Ensure this happens after login success
+export const redirectToOAuthWithAppId = () => {
+    // Get the OAuth URL with app_id set to 67066
+    const oauthUrlWithAppId = generateOAuthURL();
+    
+    // Redirect to the OAuth URL
+    window.location.href = oauthUrlWithAppId;
 };
