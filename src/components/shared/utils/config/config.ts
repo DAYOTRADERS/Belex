@@ -83,9 +83,9 @@ export const getAppId = () => {
     const config_app_id = window.localStorage.getItem('config.app_id');
     const current_domain = getCurrentProductionDomain() ?? '';
 
-    // If it's a local environment, set the app_id to 67066
+    // If it's a local environment, set the app_id to 68411
     if (isLocal()) {
-        app_id = APP_IDS.LOCALHOST;  // Using 67066 here
+        app_id = APP_IDS.LOCALHOST;  // Using 68411 here
     } else if (config_app_id) {
         app_id = config_app_id;
     } else if (isStaging()) {
@@ -143,14 +143,14 @@ export const getDebugServiceWorker = () => {
     return false;
 };
 
-// Generate OAuth URL with app_id set to 67066
+// Generate OAuth URL with app_id set to 68411
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
 
-    // Force the app_id to be 67066 after login
-    const configured_app_id = '67066';  // Always use app_id 67066 for OAuth
+    // Force the app_id to be 68411 after login
+    const configured_app_id = '68411';  // Always use app_id 68411 for OAuth
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
         original_url.hostname) as string;
 
@@ -167,7 +167,7 @@ export const generateOAuthURL = () => {
 
 // Ensure this happens after login success
 export const redirectToOAuthWithAppId = () => {
-    // Get the OAuth URL with app_id set to 67066
+    // Get the OAuth URL with app_id set to 68411
     const oauthUrlWithAppId = generateOAuthURL();
     
     // Redirect to the OAuth URL

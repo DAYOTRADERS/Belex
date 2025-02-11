@@ -1,0 +1,3 @@
+[build]
+  command = "npm run build"  # Change this if you're using a different framework
+  publish = "dist"  # Change to "build" if you're using React
