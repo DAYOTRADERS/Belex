@@ -2,7 +2,7 @@ import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/u
 import { isStaging } from '../url/helpers';
 
 export const APP_IDS = {
-    LOCALHOST: 36300,  
+    LOCALHOST: 36300,
     TMP_STAGING: 64584,
     STAGING: 29934,
     STAGING_BE: 29934,
@@ -83,13 +83,12 @@ export const getAppId = () => {
     const config_app_id = window.localStorage.getItem('config.app_id');
     const current_domain = getCurrentProductionDomain() ?? '';
 
-    // If it's a local environment, set the app_id to 68411
-    if (isLocal()) {
-        app_id = APP_IDS.LOCALHOST;  // Using 68411 here
-    } else if (config_app_id) {
+    if (config_app_id) {
         app_id = config_app_id;
     } else if (isStaging()) {
         app_id = APP_IDS.STAGING;
+    } else if (isTestLink()) {
+        app_id = APP_IDS.LOCALHOST;
     } else {
         app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
     }
@@ -143,7 +142,7 @@ export const getDebugServiceWorker = () => {
     return false;
 };
 
-// Generate OAuth URL with app_id set to 68411
+// Generate OAuth URL with app_id set to 68411 (always)
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
@@ -152,14 +151,19 @@ export const generateOAuthURL = () => {
     // Force the app_id to be 68411 after login
     const configured_app_id = '68411';  // Always use app_id 68411 for OAuth
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
+        localStorage.getItem('config.server_url') ||
         original_url.hostname) as string;
 
     const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-    if (!valid_server_urls.includes(configured_server_url)) {
+    if (
+        typeof configured_server_url === 'string'
+            ? !valid_server_urls.includes(configured_server_url)
+            : !valid_server_urls.includes(JSON.stringify(configured_server_url))
+    ) {
         original_url.hostname = configured_server_url;
     }
 
-    // Add the app_id as a query parameter
+    // Add the app_id as a query parameter (always use 68411)
     original_url.searchParams.set('app_id', configured_app_id);
 
     return original_url.toString() || oauth_url;
@@ -170,6 +174,8 @@ export const redirectToOAuthWithAppId = () => {
     // Get the OAuth URL with app_id set to 68411
     const oauthUrlWithAppId = generateOAuthURL();
     
-    // Redirect to the OAuth URL
-    window.location.href = oauthUrlWithAppId;
+    if (oauthUrlWithAppId) {
+        // Redirect to the OAuth URL
+        window.location.href = oauthUrlWithAppId;
+    }
 };
