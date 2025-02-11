@@ -142,14 +142,10 @@ export const getDebugServiceWorker = () => {
     return false;
 };
 
-// Generate OAuth URL with app_id set to 68411 (always)
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
-
-    // Force the app_id to be 68411 after login
-    const configured_app_id = '68411';  // Always use app_id 68411 for OAuth
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
         localStorage.getItem('config.server_url') ||
         original_url.hostname) as string;
@@ -162,20 +158,5 @@ export const generateOAuthURL = () => {
     ) {
         original_url.hostname = configured_server_url;
     }
-
-    // Add the app_id as a query parameter (always use 68411)
-    original_url.searchParams.set('app_id', configured_app_id);
-
     return original_url.toString() || oauth_url;
-};
-
-// Ensure this happens after login success
-export const redirectToOAuthWithAppId = () => {
-    // Get the OAuth URL with app_id set to 68411
-    const oauthUrlWithAppId = generateOAuthURL();
-    
-    if (oauthUrlWithAppId) {
-        // Redirect to the OAuth URL
-        window.location.href = oauthUrlWithAppId;
-    }
 };
