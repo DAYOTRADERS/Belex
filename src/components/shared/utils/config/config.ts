@@ -7,7 +7,7 @@ export const APP_IDS = {
     STAGING: 29934,
     STAGING_BE: 29934,
     STAGING_ME: 29934,
-    PRODUCTION: 65555,
+    PRODUCTION: 67045,
     PRODUCTION_BE: 65556,
     PRODUCTION_ME: 65557,
 };
@@ -30,7 +30,7 @@ export const getCurrentProductionDomain = () =>
     Object.keys(domain_app_ids).find(domain => window.location.hostname === domain);
 
 export const isProduction = () => {
-    const all_domains = Object.keys(domain_app_ids).map(domain => `(www\\.)?${domain.replace('.', '\\.')}`);
+    const all_domains = Object.keys(domain_app_ids).map(domain => `(www\.)?${domain.replace('.', '\.')}`);
     return new RegExp(`^(${all_domains.join('|')})$`, 'i').test(window.location.hostname);
 };
 
@@ -104,7 +104,6 @@ export const getSocketURL = () => {
 
     return server_url;
 };
-
 export const checkAndSetEndpointFromUrl = () => {
     if (isTestLink()) {
         const url_params = new URLSearchParams(location.search.slice(1));
@@ -124,9 +123,7 @@ export const checkAndSetEndpointFromUrl = () => {
             const params = url_params.toString();
             const hash = location.hash;
 
-            location.href = `${location.protocol}//${location.hostname}${location.pathname}${
-                params ? `?${params}` : ''
-            }${hash || ''}`;
+            location.href = `${location.protocol}//${location.hostname}${location.pathname}${params ? `?${params}` : ''}${hash || ''}`;
 
             return true;
         }
@@ -146,6 +143,10 @@ export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
+    
+    // Set the app_id to 68411
+    original_url.searchParams.set('app_id', '68411');
+
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
         localStorage.getItem('config.server_url') ||
         original_url.hostname) as string;
