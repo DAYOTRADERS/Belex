@@ -104,6 +104,7 @@ export const getSocketURL = () => {
 
     return server_url;
 };
+
 export const checkAndSetEndpointFromUrl = () => {
     if (isTestLink()) {
         const url_params = new URLSearchParams(location.search.slice(1));
@@ -141,23 +142,33 @@ export const getDebugServiceWorker = () => {
 
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
-    const oauth_url = getOauthURL();
-    const original_url = new URL(oauth_url);
-    
-    // Set the app_id to 68411
-    original_url.searchParams.set('app_id', '68411');
+    let oauth_url = getOauthURL();
 
-    const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
-        localStorage.getItem('config.server_url') ||
-        original_url.hostname) as string;
+    if (oauth_url) {
+        try {
+            const original_url = new URL(oauth_url);
 
-    const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-    if (
-        typeof configured_server_url === 'string'
-            ? !valid_server_urls.includes(configured_server_url)
-            : !valid_server_urls.includes(JSON.stringify(configured_server_url))
-    ) {
-        original_url.hostname = configured_server_url;
+            // Ensure 'app_id' is set to 67045 only if not already set
+            if (!original_url.searchParams.has('app_id')) {
+                original_url.searchParams.set('app_id', '67045');
+            }
+
+            const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
+                localStorage.getItem('config.server_url') ||
+                original_url.hostname) as string;
+
+            const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
+
+            if (!valid_server_urls.includes(configured_server_url)) {
+                original_url.hostname = configured_server_url;
+            }
+
+            return original_url.toString();
+        } catch (error) {
+            console.error('Error generating OAuth URL:', error);
+            return oauth_url; // Return original URL if an error occurs
+        }
     }
-    return original_url.toString() || oauth_url;
+
+    return oauth_url;
 };
