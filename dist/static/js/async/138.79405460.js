@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbot=self.webpackChunkbot||[]).push([["138"],{28864:function(s,n,e){e.r(n),e.d(n,{default:function(){return i}});var t=e(85893);e(67294);let i=()=>(0,t.jsxs)("div",{children:[(0,t.jsx)("h1",{children:"Analysis Tool"}),(0,t.jsx)("p",{children:"This is the analysis tool content."})]})}}]);
