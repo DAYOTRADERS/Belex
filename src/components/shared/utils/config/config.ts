@@ -83,16 +83,14 @@ export const getAppId = (): number => {
     const current_domain = getCurrentProductionDomain() ?? '';
 
     if (config_app_id) {
-        app_id = parseInt(config_app_id, 10);
-    } else if (isStaging()) {
-        app_id = APP_IDS.STAGING;
-    } else if (isTestLink()) {
-        app_id = APP_IDS.LOCALHOST;
-    } else {
-        app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
+        const parsed_app_id = parseInt(config_app_id, 10);
+        if (!isNaN(parsed_app_id)) return parsed_app_id;
     }
 
-    return app_id;
+    if (isStaging()) return APP_IDS.STAGING;
+    if (isTestLink()) return APP_IDS.LOCALHOST;
+
+    return domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
 };
 
 export const getSocketURL = (): string => {
@@ -112,6 +110,8 @@ export const checkAndSetEndpointFromUrl = (): boolean => {
 
             url_params.delete('qa_server');
             url_params.delete('app_id');
+
+            console.log('QA Server:', qa_server, 'App ID:', app_id);
 
             if (/^(^(www\.)?qa[0-9]{1,4}\.deriv.dev|(.*)\.derivws\.com)$/.test(qa_server) && /^[0-9]+$/.test(app_id)) {
                 localStorage.setItem('config.app_id', app_id);
@@ -141,6 +141,6 @@ export const generateOAuthURL = (): string => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
-    original_url.searchParams.set('app_id', '68411');
+    original_url.searchParams.set('app_id', getAppId().toString());
     return original_url.toString();
 };
