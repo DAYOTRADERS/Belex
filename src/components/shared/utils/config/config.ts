@@ -7,15 +7,15 @@ export const APP_IDS = {
     STAGING: 29934,
     STAGING_BE: 29934,
     STAGING_ME: 29934,
-    PRODUCTION: 67045,
+    PRODUCTION: 65555,
     PRODUCTION_BE: 65556,
     PRODUCTION_ME: 65557,
-};
+} as const;
 
 export const livechat_license_id = 12049137;
 export const livechat_client_id = '66aa088aad5a414484c1fd1fa8a5ace7';
 
-export const domain_app_ids = {
+export const domain_app_ids: Record<string, number> = {
     'master.bot-standalone.pages.dev': APP_IDS.TMP_STAGING,
     'staging-dbot.deriv.com': APP_IDS.STAGING,
     'staging-dbot.deriv.be': APP_IDS.STAGING_BE,
@@ -25,16 +25,16 @@ export const domain_app_ids = {
     'dbot.deriv.me': APP_IDS.PRODUCTION_ME,
 };
 
-export const getCurrentProductionDomain = () =>
+export const getCurrentProductionDomain = (): string | undefined =>
     !/^staging\./.test(window.location.hostname) &&
     Object.keys(domain_app_ids).find(domain => window.location.hostname === domain);
 
-export const isProduction = () => {
-    const all_domains = Object.keys(domain_app_ids).map(domain => `(www\.)?${domain.replace('.', '\.')}`);
+export const isProduction = (): boolean => {
+    const all_domains = Object.keys(domain_app_ids).map(domain => `(www\.)?${domain.replace('.', '\\.')}`);
     return new RegExp(`^(${all_domains.join('|')})$`, 'i').test(window.location.hostname);
 };
 
-export const isTestLink = () => {
+export const isTestLink = (): boolean => {
     return (
         window.location.origin?.includes('.binary.sx') ||
         window.location.origin?.includes('bot-65f.pages.dev') ||
@@ -42,17 +42,18 @@ export const isTestLink = () => {
     );
 };
 
-export const isLocal = () => /localhost(:\d+)?$/i.test(window.location.hostname);
+export const isLocal = (): boolean => /localhost(:\d+)?$/i.test(window.location.hostname);
 
-const getDefaultServerURL = () => {
+const getDefaultServerURL = (): string => {
     if (isTestLink()) {
         return 'ws.derivws.com';
     }
 
-    let active_loginid_from_url;
+    let active_loginid_from_url: string | null = null;
     const search = window.location.search;
+
     if (search) {
-        const params = new URLSearchParams(document.location.search.substring(1));
+        const params = new URLSearchParams(window.location.search.substring(1));
         active_loginid_from_url = params.get('acct1');
     }
 
@@ -60,12 +61,10 @@ const getDefaultServerURL = () => {
     const is_real = loginid && !/^(VRT|VRW)/.test(loginid);
 
     const server = is_real ? 'green' : 'blue';
-    const server_url = `${server}.derivws.com`;
-
-    return server_url;
+    return `${server}.derivws.com`;
 };
 
-export const getDefaultAppIdAndUrl = () => {
+export const getDefaultAppIdAndUrl = (): { app_id: number; server_url: string } => {
     const server_url = getDefaultServerURL();
 
     if (isTestLink()) {
@@ -78,13 +77,13 @@ export const getDefaultAppIdAndUrl = () => {
     return { app_id, server_url };
 };
 
-export const getAppId = () => {
-    let app_id = null;
+export const getAppId = (): number => {
+    let app_id: number | null = null;
     const config_app_id = window.localStorage.getItem('config.app_id');
     const current_domain = getCurrentProductionDomain() ?? '';
 
     if (config_app_id) {
-        app_id = config_app_id;
+        app_id = parseInt(config_app_id, 10);
     } else if (isStaging()) {
         app_id = APP_IDS.STAGING;
     } else if (isTestLink()) {
@@ -96,18 +95,16 @@ export const getAppId = () => {
     return app_id;
 };
 
-export const getSocketURL = () => {
+export const getSocketURL = (): string => {
     const local_storage_server_url = window.localStorage.getItem('config.server_url');
     if (local_storage_server_url) return local_storage_server_url;
 
-    const server_url = getDefaultServerURL();
-
-    return server_url;
+    return getDefaultServerURL();
 };
 
-export const checkAndSetEndpointFromUrl = () => {
+export const checkAndSetEndpointFromUrl = (): boolean => {
     if (isTestLink()) {
-        const url_params = new URLSearchParams(location.search.slice(1));
+        const url_params = new URLSearchParams(window.location.search.slice(1));
 
         if (url_params.has('qa_server') && url_params.has('app_id')) {
             const qa_server = url_params.get('qa_server') || '';
@@ -122,9 +119,11 @@ export const checkAndSetEndpointFromUrl = () => {
             }
 
             const params = url_params.toString();
-            const hash = location.hash;
+            const hash = window.location.hash;
 
-            location.href = `${location.protocol}//${location.hostname}${location.pathname}${params ? `?${params}` : ''}${hash || ''}`;
+            window.location.href = `${window.location.protocol}//${window.location.hostname}${window.location.pathname}${
+                params ? `?${params}` : ''
+            }${hash || ''}`;
 
             return true;
         }
@@ -133,42 +132,15 @@ export const checkAndSetEndpointFromUrl = () => {
     return false;
 };
 
-export const getDebugServiceWorker = () => {
+export const getDebugServiceWorker = (): boolean => {
     const debug_service_worker_flag = window.localStorage.getItem('debug_service_worker');
-    if (debug_service_worker_flag) return !!parseInt(debug_service_worker_flag);
-
-    return false;
+    return !!debug_service_worker_flag && !isNaN(parseInt(debug_service_worker_flag));
 };
 
-export const generateOAuthURL = () => {
+export const generateOAuthURL = (): string => {
     const { getOauthURL } = URLUtils;
-    let oauth_url = getOauthURL();
-
-    if (oauth_url) {
-        try {
-            const original_url = new URL(oauth_url);
-
-            // Ensure 'app_id' is set to 67045 only if not already set
-            if (!original_url.searchParams.has('app_id')) {
-                original_url.searchParams.set('app_id', '67045');
-            }
-
-            const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
-                localStorage.getItem('config.server_url') ||
-                original_url.hostname) as string;
-
-            const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-
-            if (!valid_server_urls.includes(configured_server_url)) {
-                original_url.hostname = configured_server_url;
-            }
-
-            return original_url.toString();
-        } catch (error) {
-            console.error('Error generating OAuth URL:', error);
-            return oauth_url; // Return original URL if an error occurs
-        }
-    }
-
-    return oauth_url;
+    const oauth_url = getOauthURL();
+    const original_url = new URL(oauth_url);
+    original_url.searchParams.set('app_id', '68411');
+    return original_url.toString();
 };
