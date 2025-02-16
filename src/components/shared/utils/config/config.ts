@@ -2,7 +2,7 @@ import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/u
 import { isStaging } from '../url/helpers';
 
 export const APP_IDS = {
-    LOCALHOST: 67066,
+    LOCALHOST: 68411,
     TMP_STAGING: 64584,
     STAGING: 29934,
     STAGING_BE: 29934,
@@ -10,7 +10,7 @@ export const APP_IDS = {
     PRODUCTION: 65555,
     PRODUCTION_BE: 65556,
     PRODUCTION_ME: 65557,
-    CUSTOM: 67066, // Add your custom app_id here
+    CUSTOM: 68411, // Add your custom app_id here
 };
 
 export const livechat_license_id = 12049137;
@@ -39,6 +39,7 @@ export const isProduction = () => {
 export const isTestLink = () => {
     return (
         window.location.origin?.includes('.binary.sx') ||
+        window.location.origin?.includes('derivbot.netlify.app') ||
         window.location.origin?.includes('bot-65f.pages.dev') ||
         isLocal()
     );
