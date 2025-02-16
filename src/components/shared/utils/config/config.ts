@@ -2,28 +2,31 @@ import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/u
 import { isStaging } from '../url/helpers';
 
 export const APP_IDS = {
-    LOCALHOST: 68411,
-    TMP_STAGING: 68411,
-    STAGING: 68411,
-    STAGING_BE: 68411,
-    STAGING_ME: 68411,
-    PRODUCTION: 68411,
-    PRODUCTION_BE: 68411,
-    PRODUCTION_ME: 68411,
+    LOCALHOST: 36300,
+    TMP_STAGING: 64584,
+    STAGING: 29934,
+    STAGING_BE: 29934,
+    STAGING_ME: 29934,
+    PRODUCTION: 65555,
+    PRODUCTION_BE: 65556,
+    PRODUCTION_ME: 65557,
+    CUSTOM: 68411, // Add your custom app_id here
 };
 
 export const livechat_license_id = 12049137;
 export const livechat_client_id = '66aa088aad5a414484c1fd1fa8a5ace7';
 
 export const domain_app_ids = {
-    'master.bot-standalone.pages.dev': 68411,
-    'staging-dbot.deriv.com': 68411,
-    'staging-dbot.deriv.be': 68411,
-    'staging-dbot.deriv.me': 68411,
-    'dbot.deriv.com': 68411,
-    'dbot.deriv.be': 68411,
-    'dbot.deriv.me': 68411,
+    'master.bot-standalone.pages.dev': APP_IDS.TMP_STAGING,
+    'staging-dbot.deriv.com': APP_IDS.STAGING,
+    'staging-dbot.deriv.be': APP_IDS.STAGING_BE,
+    'staging-dbot.deriv.me': APP_IDS.STAGING_ME,
+    'dbot.deriv.com': APP_IDS.PRODUCTION,
+    'dbot.deriv.be': APP_IDS.PRODUCTION_BE,
+    'dbot.deriv.me': APP_IDS.PRODUCTION_ME,
+    'custom-domain.com': APP_IDS.CUSTOM, // Add your custom domain and app_id here
 };
+
 export const getCurrentProductionDomain = () =>
     !/^staging\./.test(window.location.hostname) &&
     Object.keys(domain_app_ids).find(domain => window.location.hostname === domain);
@@ -59,7 +62,9 @@ const getDefaultServerURL = () => {
     const is_real = loginid && !/^(VRT|VRW)/.test(loginid);
 
     const server = is_real ? 'green' : 'blue';
-    return `${server}.derivws.com`;
+    const server_url = `${server}.derivws.com`;
+
+    return server_url;
 };
 
 export const getDefaultAppIdAndUrl = () => {
@@ -70,7 +75,7 @@ export const getDefaultAppIdAndUrl = () => {
     }
 
     const current_domain = getCurrentProductionDomain() ?? '';
-    const app_id = domain_app_ids[current_domain] ?? APP_IDS.PRODUCTION;
+    const app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.CUSTOM; // Default to custom app_id
 
     return { app_id, server_url };
 };
@@ -80,14 +85,16 @@ export const getAppId = () => {
     const config_app_id = window.localStorage.getItem('config.app_id');
     const current_domain = getCurrentProductionDomain() ?? '';
 
-    if (isLocal()) {
-        app_id = APP_IDS.LOCALHOST;
-    } else if (config_app_id) {
+    if (config_app_id) {
         app_id = config_app_id;
     } else if (isStaging()) {
         app_id = APP_IDS.STAGING;
+    } else if (isTestLink()) {
+        app_id = APP_IDS.LOCALHOST;
+    } else if (current_domain === 'custom-domain.com') { // Add your custom domain check here
+        app_id = APP_IDS.CUSTOM;
     } else {
-        app_id = domain_app_ids[current_domain] ?? APP_IDS.PRODUCTION;
+        app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
     }
 
     return app_id;
@@ -95,7 +102,11 @@ export const getAppId = () => {
 
 export const getSocketURL = () => {
     const local_storage_server_url = window.localStorage.getItem('config.server_url');
-    return local_storage_server_url || getDefaultServerURL();
+    if (local_storage_server_url) return local_storage_server_url;
+
+    const server_url = getDefaultServerURL();
+
+    return server_url;
 };
 
 export const checkAndSetEndpointFromUrl = () => {
@@ -117,9 +128,8 @@ export const checkAndSetEndpointFromUrl = () => {
             const params = url_params.toString();
             const hash = location.hash;
 
-            location.href = `${location.protocol}//${location.hostname}${location.pathname}${
-                params ? `?${params}` : ''
-            }${hash || ''}`;
+            location.href = `${location.protocol}//${location.hostname}${location.pathname}${params ? `?${params}` : ''
+                }${hash || ''}`;
 
             return true;
         }
@@ -130,33 +140,26 @@ export const checkAndSetEndpointFromUrl = () => {
 
 export const getDebugServiceWorker = () => {
     const debug_service_worker_flag = window.localStorage.getItem('debug_service_worker');
-    return debug_service_worker_flag ? !!parseInt(debug_service_worker_flag) : false;
+    if (debug_service_worker_flag) return !!parseInt(debug_service_worker_flag);
+
+    return false;
 };
 
-// Generate OAuth URL with app_id set to 68411
 export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
-
-    // Force the app_id to be 68411 after login
-    const configured_app_id = '68411';
     const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
+        localStorage.getItem('config.server_url') ||
         original_url.hostname) as string;
 
     const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-    if (!valid_server_urls.includes(configured_server_url)) {
+    if (
+        typeof configured_server_url === 'string'
+            ? !valid_server_urls.includes(configured_server_url)
+            : !valid_server_urls.includes(JSON.stringify(configured_server_url))
+    ) {
         original_url.hostname = configured_server_url;
     }
-
-    // Add the app_id as a query parameter
-    original_url.searchParams.set('app_id', configured_app_id);
-
     return original_url.toString() || oauth_url;
-};
-
-// Ensure this happens after login success
-export const redirectToOAuthWithAppId = () => {
-    const oauthUrlWithAppId = generateOAuthURL();
-    window.location.href = oauthUrlWithAppId;
 };
