@@ -85,15 +85,17 @@ export const getAppId = () => {
     const config_app_id = window.localStorage.getItem('config.app_id');
     const current_domain = getCurrentProductionDomain() ?? '';
 
+    // Check if config app id exists in localStorage
     if (config_app_id) {
         app_id = config_app_id;
     } else if (isStaging()) {
+        // If staging environment, assign staging app id
         app_id = APP_IDS.STAGING;
     } else if (isTestLink()) {
+        // If test link, assign localhost app id
         app_id = APP_IDS.LOCALHOST;
-    } else if (current_domain === 'derivbot.netlify.app') { // Add your custom domain check here
-        app_id = APP_IDS.CUSTOM;
     } else {
+        //  get app id based on domain
         app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
     }
 
