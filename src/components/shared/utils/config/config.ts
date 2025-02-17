@@ -39,7 +39,6 @@ export const isProduction = () => {
 export const isTestLink = () => {
     return (
         window.location.origin?.includes('.binary.sx') ||
-        window.location.origin?.includes('derivbot.netlify.app') ||
         window.location.origin?.includes('bot-65f.pages.dev') ||
         isLocal()
     );
